@@ -8,7 +8,7 @@ use {
     crate::AppleCodesignError,
     base64::{engine::general_purpose::STANDARD as STANDARD_ENGINE, Engine},
     log::warn,
-    reqwest::blocking::{Client, ClientBuilder},
+    reqwest::{Client, ClientBuilder},
     serde::{Deserialize, Serialize},
     std::collections::HashMap,
 };
@@ -174,7 +174,7 @@ pub fn default_client() -> Result<Client, AppleCodesignError> {
 /// Look up a notarization ticket given an HTTP client and an iterable of record names.
 ///
 /// The record name is of the form `2/<digest_type>/<code_directory_digest>`.
-pub fn lookup_notarization_tickets<'a>(
+pub async fn lookup_notarization_tickets<'a>(
     client: &Client,
     record_names: impl Iterator<Item = &'a str>,
 ) -> Result<TicketLookupResponse, AppleCodesignError> {
@@ -195,9 +195,9 @@ pub fn lookup_notarization_tickets<'a>(
         .header("Content-Type", "application/json")
         .json(&body);
 
-    let response = req.send()?;
+    let response = req.send().await?;
 
-    let body = response.bytes()?;
+    let body = response.bytes().await?;
 
     let response = serde_json::from_slice::<TicketLookupResponse>(&body)?;
 
@@ -207,11 +207,11 @@ pub fn lookup_notarization_tickets<'a>(
 /// Look up a single notarization ticket.
 ///
 /// This is just a convenience wrapper around [lookup_notarization_tickets()].
-pub fn lookup_notarization_ticket(
+pub async fn lookup_notarization_ticket(
     client: &Client,
     record_name: &str,
 ) -> Result<TicketLookupResponse, AppleCodesignError> {
-    lookup_notarization_tickets(client, std::iter::once(record_name))
+    lookup_notarization_tickets(client, std::iter::once(record_name)).await
 }
 
 #[cfg(test)]
@@ -221,11 +221,11 @@ mod test {
     const PYOXIDIZER_APP_RECORD: &str = "2/2/1b747faf223750de74febed7929f14a73af8c933";
     const DEADBEEF: &str = "2/2/deadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
 
-    #[test]
-    fn lookup_ticket() -> Result<(), AppleCodesignError> {
+    #[tokio::test]
+    async fn lookup_ticket() -> Result<(), AppleCodesignError> {
         let client = default_client()?;
 
-        let res = lookup_notarization_ticket(&client, PYOXIDIZER_APP_RECORD)?;
+        let res = lookup_notarization_ticket(&client, PYOXIDIZER_APP_RECORD).await?;
 
         assert!(matches!(
             &res.records[0],
@@ -235,7 +235,7 @@ mod test {
         let ticket = res.signed_ticket(PYOXIDIZER_APP_RECORD)?;
         assert_eq!(&ticket[0..4], b"s8ch");
 
-        let res = lookup_notarization_ticket(&client, DEADBEEF)?;
+        let res = lookup_notarization_ticket(&client, DEADBEEF).await?;
         assert!(matches!(
             &res.records[0],
             TicketLookupResponseRecord::Failure(_)

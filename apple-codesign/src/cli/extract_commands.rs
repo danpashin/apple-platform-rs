@@ -275,8 +275,9 @@ pub struct Extract {
     data: ExtractData,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for Extract {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let common = self.data.common_args();
 
         let data = std::fs::read(&common.path)?;

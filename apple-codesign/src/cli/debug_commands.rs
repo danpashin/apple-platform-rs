@@ -45,8 +45,9 @@ pub struct DebugCreateCodeRequirements {
     path: PathBuf,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for DebugCreateCodeRequirements {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let expression = self.code_requirement.deref();
 
         let mut reqs = CodeRequirements::default();
@@ -76,8 +77,9 @@ pub struct DebugCreateConstraints {
     path: PathBuf,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for DebugCreateConstraints {
-    fn run(&self, _context: &Context) -> Result<()> {
+    async fn run(&self, _context: &Context) -> Result<()> {
         let mut v = plist::Dictionary::default();
 
         if let Some(id) = &self.team_id {
@@ -131,8 +133,9 @@ pub struct DebugCreateEntitlements {
     output_path: PathBuf,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for DebugCreateEntitlements {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let mut d = plist::Dictionary::default();
 
         if self.get_task_allow {
@@ -208,8 +211,9 @@ pub struct DebugCreateInfoPlist {
     empty: bool,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for DebugCreateInfoPlist {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let mut d = plist::Dictionary::default();
 
         if !self.empty {
@@ -280,8 +284,9 @@ pub struct DebugCreateMachO {
     output_path: PathBuf,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for DebugCreateMachO {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let mut builder = match self.architecture {
             MachOArch::Aarch64 => {
                 crate::macho_builder::MachOBuilder::new_aarch64(self.file_type.to_header_filetype())
@@ -351,8 +356,9 @@ pub struct DebugFileTree {
     path: PathBuf,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for DebugFileTree {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let root = self
             .path
             .components()

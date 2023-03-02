@@ -57,7 +57,7 @@ rand = "0.8.5"
 rasn = "0.12.4"
 rayon = "1.8.0"
 regex = "1.10.2"
-reqwest = { version = "0.11.23", default-features = false, features = ["blocking", "json", "rustls-tls-native-roots"] }
+reqwest = { version = "0.11.23", default-features = false, features = ["json", "rustls-tls-native-roots"] }
 ring = "0.17.7"
 rsa = "0.9.6"
 scroll = "0.12.0"
@@ -73,7 +73,7 @@ spki = { version = "0.7.3", features = ["pem"] }
 subtle = "2.5.0"
 tempfile = "3.9.0"
 thiserror = "1.0.56"
-tokio = { version = "1.35.1", features = ["rt"] }
+tokio = { version = "1.35.1", features = ["rt", "macros"] }
 tungstenite = { version = "0.21.0", features = ["rustls-tls-native-roots"] }
 uuid = { version = "1.6.1", features = ["v4"] }
 walkdir = "2.4.0"
@@ -85,6 +85,7 @@ yubikey = { version = "0.8.0", optional = true, features = ["untested"] }
 zeroize = { version = "1.7.0", features = ["zeroize_derive"] }
 zip = { version = "0.6.6", default-features = false, features = ["deflate"] }
 zip_structs = "0.2.1"
+async-trait = { version = "0.1.74", optional = true }
 
 [dependencies.app-store-connect]
 path = "../app-store-connect"
@@ -120,7 +121,7 @@ trycmd-indygreg-fork = "0.14.20"
 zip = { version = "0.6.6", default-features = false }
 
 [features]
-default = ["notarize"]
+default = ["notarize", "cli"]
 notarize = [
     "app-store-connect",
     "aws-config",
@@ -129,3 +130,4 @@ notarize = [
     "aws-smithy-types",
 ]
 smartcard = ["yubikey"]
+cli = ["async-trait"]

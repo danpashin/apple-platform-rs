@@ -4,8 +4,9 @@
 
 use apple_codesign::AppleCodesignError;
 
-fn main() {
-    let exit_code = match apple_codesign::cli::main_impl() {
+#[tokio::main]
+async fn main() {
+    let exit_code = match apple_codesign::cli::main_impl().await {
         Ok(()) => 0,
         Err(AppleCodesignError::Figment(err)) => {
             eprintln!("configuration file error");

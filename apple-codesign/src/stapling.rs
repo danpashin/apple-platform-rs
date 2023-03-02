@@ -24,7 +24,7 @@ use {
     apple_bundles::DirectoryBundle,
     apple_xar::reader::XarReader,
     log::{error, info, warn},
-    reqwest::blocking::Client,
+    reqwest::Client,
     scroll::{IOread, IOwrite, Pread, Pwrite, SizeWith},
     std::{
         fmt::Debug,
@@ -159,13 +159,13 @@ impl Stapler {
     /// This errors if there is a problem deriving the notarization ticket record name
     /// or if a failure occurs when looking up the notarization ticket. This can include
     /// a notarization ticket not existing for the requested record.
-    pub fn lookup_ticket_for_executable_bundle(
+    pub async fn lookup_ticket_for_executable_bundle(
         &self,
         bundle: &DirectoryBundle,
     ) -> Result<Vec<u8>, AppleCodesignError> {
         let record_name = record_name_from_executable_bundle(bundle)?;
 
-        let response = lookup_notarization_ticket(&self.client, &record_name)?;
+        let response = lookup_notarization_ticket(&self.client, &record_name).await?;
 
         let ticket_data = response.signed_ticket(&record_name)?;
 
@@ -173,19 +173,22 @@ impl Stapler {
     }
 
     /// Attempt to staple a bundle by obtaining a notarization ticket automatically.
-    pub fn staple_bundle(&self, bundle: &DirectoryBundle) -> Result<(), AppleCodesignError> {
+    pub async fn staple_bundle(&self, bundle: &DirectoryBundle) -> Result<(), AppleCodesignError> {
         warn!(
             "attempting to find notarization ticket for bundle at {}",
             bundle.root_dir().display()
         );
-        let ticket_data = self.lookup_ticket_for_executable_bundle(bundle)?;
+        let ticket_data = self.lookup_ticket_for_executable_bundle(bundle).await?;
         staple_ticket_to_bundle(bundle, &ticket_data)?;
 
         Ok(())
     }
 
     /// Look up ticket data for DMG file.
-    pub fn lookup_ticket_for_dmg(&self, dmg: &DmgReader) -> Result<Vec<u8>, AppleCodesignError> {
+    pub async fn lookup_ticket_for_dmg(
+        &self,
+        dmg: &DmgReader,
+    ) -> Result<Vec<u8>, AppleCodesignError> {
         // The ticket is derived from the code directory digest from the signature in the
         // DMG.
         let signature = dmg
@@ -203,13 +206,13 @@ impl Stapler {
 
         let record_name = format!("2/{digest_type}/{digest}");
 
-        let response = lookup_notarization_ticket(&self.client, &record_name)?;
+        let response = lookup_notarization_ticket(&self.client, &record_name).await?;
 
         response.signed_ticket(&record_name)
     }
 
     /// Attempt to staple a DMG by obtaining a notarization ticket automatically.
-    pub fn staple_dmg(&self, path: &Path) -> Result<(), AppleCodesignError> {
+    pub async fn staple_dmg(&self, path: &Path) -> Result<(), AppleCodesignError> {
         let mut fh = File::options().read(true).write(true).open(path)?;
 
         warn!(
@@ -218,7 +221,7 @@ impl Stapler {
         );
         let reader = DmgReader::new(&mut fh)?;
 
-        let ticket_data = self.lookup_ticket_for_dmg(&reader)?;
+        let ticket_data = self.lookup_ticket_for_dmg(&reader).await?;
         warn!("found notarization ticket; proceeding with stapling");
 
         let signer = DmgSigner::default();
@@ -228,7 +231,7 @@ impl Stapler {
     }
 
     /// Lookup ticket data for a XAR archive (e.g. a `.pkg` file).
-    pub fn lookup_ticket_for_xar<R: Read + Seek + Sized + Debug>(
+    pub async fn lookup_ticket_for_xar<R: Read + Seek + Sized + Debug>(
         &self,
         reader: &mut XarReader<R>,
     ) -> Result<Vec<u8>, AppleCodesignError> {
@@ -241,7 +244,7 @@ impl Stapler {
 
         let record_name = format!("2/{digest_type}/{digest}");
 
-        let response = lookup_notarization_ticket(&self.client, &record_name)?;
+        let response = lookup_notarization_ticket(&self.client, &record_name).await?;
 
         response.signed_ticket(&record_name)
     }
@@ -252,11 +255,11 @@ impl Stapler {
     ///
     /// The stream will be opened as a XAR file. If a ticket is found, that ticket
     /// will be appended to the end of the file.
-    pub fn staple_xar<F: Read + Write + Seek + Sized + Debug>(
+    pub async fn staple_xar<F: Read + Write + Seek + Sized + Debug>(
         &self,
         mut xar: XarReader<F>,
     ) -> Result<(), AppleCodesignError> {
-        let ticket_data = self.lookup_ticket_for_xar(&mut xar)?;
+        let ticket_data = self.lookup_ticket_for_xar(&mut xar).await?;
 
         warn!("found notarization ticket; proceeding with stapling");
 
@@ -297,7 +300,7 @@ impl Stapler {
     /// Attempt to staple an entity at a given filesystem path.
     ///
     /// The path will be modified on successful stapling operation.
-    pub fn staple_path(&self, path: impl AsRef<Path>) -> Result<(), AppleCodesignError> {
+    pub async fn staple_path(&self, path: impl AsRef<Path>) -> Result<(), AppleCodesignError> {
         let path = path.as_ref();
         warn!("attempting to staple {}", path.display());
 
@@ -310,18 +313,18 @@ impl Stapler {
             }
             PathType::Dmg => {
                 warn!("activating DMG stapling mode");
-                self.staple_dmg(path)
+                self.staple_dmg(path).await
             }
             PathType::Bundle => {
                 warn!("activating bundle stapling mode");
                 let bundle = DirectoryBundle::new_from_path(path)
                     .map_err(AppleCodesignError::DirectoryBundle)?;
-                self.staple_bundle(&bundle)
+                self.staple_bundle(&bundle).await
             }
             PathType::Xar => {
                 warn!("activating XAR stapling mode");
                 let xar = XarReader::new(File::options().read(true).write(true).open(path)?)?;
-                self.staple_xar(xar)
+                self.staple_xar(xar).await
             }
             PathType::Zip | PathType::Other => Err(AppleCodesignError::StapleUnsupportedPath(
                 path.to_path_buf(),

@@ -73,6 +73,7 @@ pub struct Context {
     pub config: Config,
 }
 
+#[async_trait::async_trait]
 pub trait CliCommand {
     /// Obtain the current command arguments normalized to a [Config] instance.
     fn as_config(&self) -> Result<Option<Config>, AppleCodesignError> {
@@ -80,7 +81,7 @@ pub trait CliCommand {
     }
 
     /// Runs the command.
-    fn run(&self, context: &Context) -> Result<(), AppleCodesignError>;
+    async fn run(&self, context: &Context) -> Result<(), AppleCodesignError>;
 }
 
 #[allow(unused)]
@@ -315,8 +316,9 @@ struct AnalyzeCertificate {
     certificate: CertificateSource,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for AnalyzeCertificate {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let certs = self.certificate.resolve_certificates(true)?.certs;
 
         for (i, cert) in certs.into_iter().enumerate() {
@@ -348,8 +350,9 @@ struct ComputeCodeHashes {
     universal_index: usize,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for ComputeCodeHashes {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let data = std::fs::read(&self.path)?;
         let mach = MachFile::parse(&data)?;
         let macho = mach.nth_macho(self.universal_index)?;
@@ -373,8 +376,9 @@ struct DiffSignatures {
     path1: PathBuf,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for DiffSignatures {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let reader = SignatureReader::from_path(&self.path0)?;
 
         let a_entities = reader.entities()?;
@@ -429,8 +433,9 @@ struct EncodeAppStoreConnectApiKey {
 }
 
 #[cfg(feature = "notarize")]
+#[async_trait::async_trait]
 impl CliCommand for EncodeAppStoreConnectApiKey {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let unified = app_store_connect::UnifiedApiKey::from_ecdsa_pem_path(
             &self.issuer_id,
             &self.key_id,
@@ -461,8 +466,9 @@ struct GenerateCertificateSigningRequest {
     certificate: CertificateSource,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for GenerateCertificateSigningRequest {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let signing_certs = self.certificate.resolve_certificates(true)?;
 
         let private_key = signing_certs.private_key()?;
@@ -541,8 +547,9 @@ struct GenerateSelfSignedCertificate {
     p12_password: Option<String>,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for GenerateSelfSignedCertificate {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let algorithm = match self.algorithm.as_str() {
             "ecdsa" => KeyAlgorithm::Ecdsa(EcdsaCurve::Secp256r1),
             "ed25519" => KeyAlgorithm::Ed25519,
@@ -656,9 +663,10 @@ struct KeychainExportCertificateChain {
     user_id: String,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for KeychainExportCertificateChain {
     #[cfg(target_os = "macos")]
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let domain = KeychainDomain::try_from(self.domain.as_str())
             .expect("clap should have validated domain values");
 
@@ -690,7 +698,7 @@ impl CliCommand for KeychainExportCertificateChain {
     }
 
     #[cfg(not(target_os = "macos"))]
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         Err(AppleCodesignError::CliGeneralError(
             "macOS Keychain export only supported on macOS".to_string(),
         ))
@@ -704,9 +712,10 @@ struct KeychainPrintCertificates {
     domain: String,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for KeychainPrintCertificates {
     #[cfg(target_os = "macos")]
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let domain = KeychainDomain::try_from(self.domain.as_str())
             .expect("clap should have validated domain values");
 
@@ -723,7 +732,7 @@ impl CliCommand for KeychainPrintCertificates {
     }
 
     #[cfg(not(target_os = "macos"))]
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         Err(AppleCodesignError::CliGeneralError(
             "macOS Keychain integration supported on macOS".to_string(),
         ))
@@ -740,8 +749,9 @@ struct MachoUniversalCreate {
     output: PathBuf,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for MachoUniversalCreate {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let mut builder = crate::macho_universal::UniversalBinaryBuilder::default();
 
         for path in &self.input {
@@ -772,8 +782,9 @@ struct NotaryList {
 }
 
 #[cfg(feature = "notarize")]
+#[async_trait::async_trait]
 impl CliCommand for NotaryList {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let notarizer = self.api.notarizer()?;
 
         let submissions = notarizer.list_submissions()?;
@@ -804,8 +815,9 @@ struct NotaryLog {
 }
 
 #[cfg(feature = "notarize")]
+#[async_trait::async_trait]
 impl CliCommand for NotaryLog {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let notarizer = self.api.notarizer()?;
 
         let log = notarizer.fetch_notarization_log(&self.submission_id)?;
@@ -841,8 +853,9 @@ struct NotarySubmit {
 }
 
 #[cfg(feature = "notarize")]
+#[async_trait::async_trait]
 impl CliCommand for NotarySubmit {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let wait = self.wait || self.staple;
 
         let wait_limit = if wait {
@@ -863,7 +876,7 @@ impl CliCommand for NotarySubmit {
                 }
                 crate::notarization::NotarizationUpload::NotaryResponse(_) => {
                     let stapler = crate::stapling::Stapler::new()?;
-                    stapler.staple_path(&self.path)?;
+                    stapler.staple_path(&self.path).await?;
                 }
             }
         }
@@ -887,8 +900,9 @@ struct NotaryWait {
 }
 
 #[cfg(feature = "notarize")]
+#[async_trait::async_trait]
 impl CliCommand for NotaryWait {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let wait_duration = std::time::Duration::from_secs(self.max_wait_seconds);
         let notarizer = self.api.notarizer()?;
 
@@ -908,8 +922,9 @@ struct ParseCodeSigningRequirement {
     input_path: PathBuf,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for ParseCodeSigningRequirement {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let data = std::fs::read(&self.input_path)?;
 
         let requirements = CodeRequirements::parse_blob(&data)?.0;
@@ -936,8 +951,9 @@ struct PrintSignatureInfo {
     path: PathBuf,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for PrintSignatureInfo {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let reader = SignatureReader::from_path(&self.path)?;
 
         let entities = reader.entities()?;
@@ -971,6 +987,7 @@ struct RemoteSign {
     certificate: CertificateSource,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for RemoteSign {
     fn as_config(&self) -> Result<Option<Config>, AppleCodesignError> {
         Ok(Some(Config {
@@ -981,7 +998,7 @@ impl CliCommand for RemoteSign {
         }))
     }
 
-    fn run(&self, context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, context: &Context) -> Result<(), AppleCodesignError> {
         let c = &context.config.remote_sign;
 
         let session_join_string = if self.session_join_string.session_join_string_editor {
@@ -1508,6 +1525,7 @@ struct Sign {
     certificate: CertificateSource,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for Sign {
     fn as_config(&self) -> Result<Option<Config>, AppleCodesignError> {
         let paths = ScopedSigningSettings::try_from(&self.scoped)?;
@@ -1521,7 +1539,7 @@ impl CliCommand for Sign {
         }))
     }
 
-    fn run(&self, context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, context: &Context) -> Result<(), AppleCodesignError> {
         let c = &context.config.sign;
 
         let mut settings = SigningSettings::default();
@@ -1594,9 +1612,10 @@ impl CliCommand for Sign {
 #[derive(Parser)]
 struct SmartcardScan {}
 
+#[async_trait::async_trait]
 impl CliCommand for SmartcardScan {
     #[cfg(feature = "yubikey")]
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let mut ctx = ::yubikey::reader::Context::open()?;
         for (index, reader) in ctx.iter()?.enumerate() {
             println!("Device {}: {}", index, reader.name());
@@ -1623,7 +1642,7 @@ impl CliCommand for SmartcardScan {
     }
 
     #[cfg(not(feature = "yubikey"))]
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         eprintln!("smartcard reading requires the `yubikey` crate feature, which isn't enabled.");
         eprintln!("recompile the crate with `cargo build --features yubikey` to enable support");
         std::process::exit(1);
@@ -1640,9 +1659,10 @@ struct SmartcardGenerateKey {
     policy: YubikeyPolicy,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for SmartcardGenerateKey {
     #[cfg(feature = "yubikey")]
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let slot_id = ::yubikey::piv::SlotId::from_str(&self.smartcard_slot)?;
 
         let touch_policy = str_to_touch_policy(self.policy.touch_policy.as_str())?;
@@ -1657,7 +1677,7 @@ impl CliCommand for SmartcardGenerateKey {
     }
 
     #[cfg(not(feature = "yubikey"))]
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         eprintln!(
             "smartcard integration requires the `yubikey` crate feature, which isn't enabled."
         );
@@ -1683,9 +1703,10 @@ struct SmartcardImport {
     policy: YubikeyPolicy,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for SmartcardImport {
     #[cfg(feature = "yubikey")]
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let signing_certs = self.certificate.resolve_certificates(false)?;
 
         let slot_id = ::yubikey::piv::SlotId::from_str(
@@ -1764,7 +1785,7 @@ impl CliCommand for SmartcardImport {
     }
 
     #[cfg(not(feature = "yubikey"))]
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         eprintln!("smartcard import requires `yubikey` crate feature, which isn't enabled.");
         eprintln!("recompile the crate with `cargo build --features yubikey` to enable support");
         std::process::exit(1);
@@ -1777,10 +1798,11 @@ struct Staple {
     path: PathBuf,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for Staple {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let stapler = crate::stapling::Stapler::new()?;
-        stapler.staple_path(&self.path)?;
+        stapler.staple_path(&self.path).await?;
 
         Ok(())
     }
@@ -1792,8 +1814,9 @@ struct Verify {
     path: PathBuf,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for Verify {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let path_type = crate::PathType::from_path(&self.path)?;
 
         if path_type != crate::PathType::MachO {
@@ -1837,9 +1860,10 @@ struct WindowsStoreExportCertificateChain {
     thumbprint: String,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for WindowsStoreExportCertificateChain {
     #[cfg(target_os = "windows")]
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let store_name = StoreName::try_from(self.windows_store_name.as_str())
             .expect("clap should have validated store name values");
 
@@ -1857,7 +1881,7 @@ impl CliCommand for WindowsStoreExportCertificateChain {
     }
 
     #[cfg(not(target_os = "windows"))]
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         Err(AppleCodesignError::CliGeneralError(
             "Windows Store export only supported on Windows".to_string(),
         ))
@@ -1871,9 +1895,10 @@ struct WindowsStorePrintCertificates {
     windows_store_name: String,
 }
 
+#[async_trait::async_trait]
 impl CliCommand for WindowsStorePrintCertificates {
     #[cfg(target_os = "windows")]
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         let store_name = StoreName::try_from(self.windows_store_name.as_str())
             .expect("clap should have validated store name values");
 
@@ -1890,7 +1915,7 @@ impl CliCommand for WindowsStorePrintCertificates {
     }
 
     #[cfg(not(target_os = "windows"))]
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         Err(AppleCodesignError::CliGeneralError(
             "Windows Store integration only supported on Windows".to_string(),
         ))
@@ -1900,8 +1925,9 @@ impl CliCommand for WindowsStorePrintCertificates {
 #[derive(Parser)]
 struct X509Oids {}
 
+#[async_trait::async_trait]
 impl CliCommand for X509Oids {
-    fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
+    async fn run(&self, _context: &Context) -> Result<(), AppleCodesignError> {
         println!("# Extended Key Usage (EKU) Extension OIDs");
         println!();
         for ekup in crate::certificate::ExtendedKeyUsagePurpose::all() {
@@ -2489,7 +2515,7 @@ impl Cli {
     }
 }
 
-pub fn main_impl() -> Result<(), AppleCodesignError> {
+pub async fn main_impl() -> Result<(), AppleCodesignError> {
     let cli = Cli::parse();
 
     let log_level = match cli.verbose {
@@ -2530,7 +2556,7 @@ pub fn main_impl() -> Result<(), AppleCodesignError> {
 
     let context = Context { config };
 
-    command.run(&context)
+    command.run(&context).await
 }
 
 #[cfg(test)]
