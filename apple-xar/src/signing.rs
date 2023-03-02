@@ -61,7 +61,7 @@ impl<R: Read + Seek + Sized + Debug> XarSigner<R> {
     /// `time_stamp_url` is an optional Time-Stamp Protocol server URL to use for the CMS
     /// signature.
     /// `certificates` is an iterable of X.509 certificates to attach to the signature.
-    pub fn sign<W: Write>(
+    pub async fn sign<W: Write>(
         &mut self,
         writer: &mut W,
         signing_key: &dyn KeyInfoSigner,
@@ -101,7 +101,8 @@ impl<R: Read + Seek + Sized + Debug> XarSigner<R> {
             .content_type(Oid(OID_ID_DATA.as_ref().into()))
             .signer(signer.clone())
             .certificates(extra_certificates.iter().cloned())
-            .build_der()?
+            .build_der()
+            .await?
             .len();
 
         // Pad it a little because CMS signatures are variable size.
@@ -175,7 +176,8 @@ impl<R: Read + Seek + Sized + Debug> XarSigner<R> {
             .content_type(Oid(OID_ID_DATA.as_ref().into()))
             .signer(signer.message_id_content(toc_digest.clone()))
             .certificates(extra_certificates.iter().cloned())
-            .build_der()?;
+            .build_der()
+            .await?;
 
         match cms_signature.len().cmp(&cms_signature_len) {
             Ordering::Greater => {

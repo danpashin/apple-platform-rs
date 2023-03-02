@@ -1440,8 +1440,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn cms_self_signed_certificate_signing_ecdsa() {
+    #[tokio::test]
+    async fn cms_self_signed_certificate_signing_ecdsa() {
         for curve in EcdsaCurve::all() {
             let (cert, signing_key) = create_self_signed_code_signing_certificate(
                 KeyAlgorithm::Ecdsa(*curve),
@@ -1460,6 +1460,7 @@ mod tests {
                 .content_inline(plaintext.as_bytes().to_vec())
                 .signer(SignerBuilder::new(&signing_key, cert.clone()))
                 .build_der()
+                .await
                 .unwrap();
 
             let signed_data = SignedData::parse_ber(&cms).unwrap();
@@ -1472,8 +1473,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn cms_self_signed_certificate_signing_ed25519() {
+    #[tokio::test]
+    async fn cms_self_signed_certificate_signing_ed25519() {
         let (cert, signing_key) = create_self_signed_code_signing_certificate(
             KeyAlgorithm::Ed25519,
             CertificateProfile::DeveloperIdInstaller,
@@ -1491,6 +1492,7 @@ mod tests {
             .content_inline(plaintext.as_bytes().to_vec())
             .signer(SignerBuilder::new(&signing_key, cert))
             .build_der()
+            .await
             .unwrap();
 
         let signed_data = SignedData::parse_ber(&cms).unwrap();

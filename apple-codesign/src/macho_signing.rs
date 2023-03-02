@@ -327,57 +327,56 @@ impl<'data> MachOSigner<'data> {
     }
 
     /// Write signed Mach-O data to the given writer using signing settings.
-    pub fn write_signed_binary(
+    pub async fn write_signed_binary(
         &self,
-        settings: &SigningSettings,
+        settings: &SigningSettings<'_>,
         writer: &mut impl Write,
     ) -> Result<(), AppleCodesignError> {
         // Implementing a true streaming writer requires calculating final sizes
         // of all binaries so fat header offsets and sizes can be written first. We take
         // the easy road and buffer individual Mach-O binaries internally.
 
-        let binaries = self
-            .machos
-            .iter()
-            .enumerate()
-            .map(|(index, original_macho)| {
-                info!("signing Mach-O binary at index {}", index);
-                let settings = settings
-                    .as_universal_macho_settings(index, original_macho.macho.header.cputype());
+        let mut binaries = Vec::new();
+        for (index, original_macho) in self.machos.iter().enumerate() {
+            info!("signing Mach-O binary at index {}", index);
+            let settings =
+                settings.as_universal_macho_settings(index, original_macho.macho.header.cputype());
 
-                let signature_len =
-                    self.estimate_embedded_signature_size(original_macho, &settings)?;
+            let signature_len =
+                self.estimate_embedded_signature_size(original_macho, &settings)?;
 
-                // Derive an intermediate Mach-O with placeholder NULLs for signature
-                // data so Code Directory digests over the load commands are correct.
-                let placeholder_signature_data = b"\0".repeat(signature_len);
+            // Derive an intermediate Mach-O with placeholder NULLs for signature
+            // data so Code Directory digests over the load commands are correct.
+            let placeholder_signature_data = b"\0".repeat(signature_len);
 
-                let intermediate_macho_data =
-                    create_macho_with_signature(original_macho, &placeholder_signature_data)?;
+            let intermediate_macho_data =
+                create_macho_with_signature(original_macho, &placeholder_signature_data)?;
 
-                // A nice side-effect of this is that it catches bugs if we write malformed Mach-O!
-                let intermediate_macho = MachOBinary::parse(&intermediate_macho_data)?;
+            // A nice side-effect of this is that it catches bugs if we write malformed Mach-O!
+            let intermediate_macho = MachOBinary::parse(&intermediate_macho_data)?;
 
-                let mut signature_data = self.create_superblob(&settings, &intermediate_macho)?;
-                info!("total signature size: {} bytes", signature_data.len());
+            let mut signature_data = self
+                .create_superblob(&settings, &intermediate_macho)
+                .await?;
+            info!("total signature size: {} bytes", signature_data.len());
 
-                // The Mach-O writer adjusts load commands based on the signature length. So pad
-                // with NULLs to get to our placeholder length.
-                match signature_data.len().cmp(&placeholder_signature_data.len()) {
-                    Ordering::Greater => {
-                        return Err(AppleCodesignError::SignatureDataTooLarge);
-                    }
-                    Ordering::Equal => {}
-                    Ordering::Less => {
-                        signature_data.extend_from_slice(
-                            &b"\0".repeat(placeholder_signature_data.len() - signature_data.len()),
-                        );
-                    }
+            // The Mach-O writer adjusts load commands based on the signature length. So pad
+            // with NULLs to get to our placeholder length.
+            match signature_data.len().cmp(&placeholder_signature_data.len()) {
+                Ordering::Greater => {
+                    return Err(AppleCodesignError::SignatureDataTooLarge);
                 }
+                Ordering::Equal => {}
+                Ordering::Less => {
+                    signature_data.extend_from_slice(
+                        &b"\0".repeat(placeholder_signature_data.len() - signature_data.len()),
+                    );
+                }
+            }
 
-                create_macho_with_signature(&intermediate_macho, &signature_data)
-            })
-            .collect::<Result<Vec<_>, AppleCodesignError>>()?;
+            let signed = create_macho_with_signature(&intermediate_macho, &signature_data)?;
+            binaries.push(signed);
+        }
 
         if binaries.len() > 1 {
             create_universal_macho(writer, binaries.iter().map(|x| x.as_slice()))?;
@@ -396,10 +395,10 @@ impl<'data> MachOSigner<'data> {
     /// This takes an explicit Mach-O to operate on due to a circular dependency
     /// between writing out the Mach-O and digesting its content. See the note
     /// in [MachOSigner] for details.
-    pub fn create_superblob(
+    pub async fn create_superblob(
         &self,
-        settings: &SigningSettings,
-        macho: &MachOBinary,
+        settings: &SigningSettings<'_>,
+        macho: &MachOBinary<'_>,
     ) -> Result<Vec<u8>, AppleCodesignError> {
         let mut builder = EmbeddedSignatureBuilder::default();
 
@@ -430,13 +429,15 @@ impl<'data> MachOSigner<'data> {
         }
 
         if let Some((signing_key, signing_cert)) = settings.signing_key() {
-            builder.create_cms_signature(
-                signing_key,
-                signing_cert,
-                settings.time_stamp_url(),
-                settings.certificate_chain().iter().cloned(),
-                settings.signing_time(),
-            )?;
+            builder
+                .create_cms_signature(
+                    signing_key,
+                    signing_cert,
+                    settings.time_stamp_url(),
+                    settings.certificate_chain().iter().cloned(),
+                    settings.signing_time(),
+                )
+                .await?;
         } else {
             builder.create_empty_cms_signature()?;
         }

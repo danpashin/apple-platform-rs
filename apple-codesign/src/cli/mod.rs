@@ -1595,10 +1595,10 @@ impl CliCommand for Sign {
                 output_path.display()
             );
 
-            signer.sign_path(&self.input_path, output_path)?;
+            signer.sign_path(&self.input_path, output_path).await?;
         } else {
             warn!("signing {} in place", self.input_path.display());
-            signer.sign_path_in_place(&self.input_path)?;
+            signer.sign_path_in_place(&self.input_path).await?;
         }
 
         if let Some(private) = certs.private_key_optional()? {

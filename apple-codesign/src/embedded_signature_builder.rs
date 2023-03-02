@@ -212,7 +212,7 @@ impl<'a> EmbeddedSignatureBuilder<'a> {
     /// current time is used.
     ///
     /// This method errors if called before a code directory is registered.
-    pub fn create_cms_signature(
+    pub async fn create_cms_signature(
         &mut self,
         signing_key: &dyn KeyInfoSigner,
         signing_cert: &CapturedX509Certificate,
@@ -304,7 +304,7 @@ impl<'a> EmbeddedSignatureBuilder<'a> {
             builder
         };
 
-        let der = builder.build_der()?;
+        let der = builder.build_der().await?;
 
         self.blobs.insert(
             CodeSigningSlot::Signature,

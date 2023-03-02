@@ -1100,11 +1100,11 @@ impl CodeResourcesBuilder {
     ///
     /// As a side-effect, files are copied/installed into the destination
     /// directory as part of sealing.
-    pub fn walk_and_seal_directory(
+    pub async fn walk_and_seal_directory(
         &mut self,
         root_bundle_path: &Path,
         bundle_root: &Path,
-        context: &BundleSigningContext,
+        context: &BundleSigningContext<'_, '_>,
     ) -> Result<(), AppleCodesignError> {
         let mut skipping_rel_dirs = BTreeSet::new();
 
@@ -1193,7 +1193,8 @@ impl CodeResourcesBuilder {
                                 &root_rel_path_normalized,
                                 context,
                                 rule.optional,
-                            )?;
+                            )
+                            .await?;
                         } else {
                             // TODO implement this?
                             // The logical intent is to sign and seal the nested entity.
@@ -1217,7 +1218,8 @@ impl CodeResourcesBuilder {
                             rule.omit,
                             rule.optional,
                             context,
-                        )?;
+                        )
+                        .await?;
                     }
                 } else if entry.file_type().is_symlink() {
                     if rule.exclude {
@@ -1311,13 +1313,13 @@ impl CodeResourcesBuilder {
     }
 
     /// Seal a Mach-O binary matching a nested rule.
-    fn seal_rules2_nested_macho(
+    async fn seal_rules2_nested_macho(
         &mut self,
         full_path: &Path,
         rel_path: &Path,
         rel_path_normalized: &str,
         root_rel_path: &str,
-        context: &BundleSigningContext,
+        context: &BundleSigningContext<'_, '_>,
         optional: bool,
     ) -> Result<(), AppleCodesignError> {
         let macho_info = if context
@@ -1336,7 +1338,7 @@ impl CodeResourcesBuilder {
 
             SignedMachOInfo::parse_data(&data)?
         } else {
-            context.sign_and_install_macho(full_path, rel_path)?.1
+            context.sign_and_install_macho(full_path, rel_path).await?.1
         };
 
         self.resources
@@ -1344,7 +1346,7 @@ impl CodeResourcesBuilder {
     }
 
     /// Seal a file for version 2 rules.
-    fn seal_rules2_file(
+    async fn seal_rules2_file(
         &mut self,
         full_path: &Path,
         rel_path: &Path,
@@ -1352,7 +1354,7 @@ impl CodeResourcesBuilder {
         root_rel_path: &str,
         omit: bool,
         optional: bool,
-        context: &BundleSigningContext,
+        context: &BundleSigningContext<'_, '_>,
     ) -> Result<(), AppleCodesignError> {
         let mut need_install = true;
 
@@ -1376,7 +1378,7 @@ impl CodeResourcesBuilder {
                     rel_path.display()
                 );
                 need_install = false;
-                context.sign_and_install_macho(full_path, rel_path)?.0
+                context.sign_and_install_macho(full_path, rel_path).await?.0
             } else {
                 info!("sealing regular file {}", rel_path_normalized);
                 full_path.to_path_buf()

@@ -30,7 +30,7 @@ impl<'key> UnifiedSigner<'key> {
     }
 
     /// Signs `input_path` and writes the signed output to `output_path`.
-    pub fn sign_path(
+    pub async fn sign_path(
         &self,
         input_path: impl AsRef<Path>,
         output_path: impl AsRef<Path>,
@@ -38,10 +38,10 @@ impl<'key> UnifiedSigner<'key> {
         let input_path = input_path.as_ref();
 
         match PathType::from_path(input_path)? {
-            PathType::Bundle => self.sign_bundle(input_path, output_path),
-            PathType::Dmg => self.sign_dmg(input_path, output_path),
-            PathType::MachO => self.sign_macho(input_path, output_path),
-            PathType::Xar => self.sign_xar(input_path, output_path),
+            PathType::Bundle => self.sign_bundle(input_path, output_path).await,
+            PathType::Dmg => self.sign_dmg(input_path, output_path).await,
+            PathType::MachO => self.sign_macho(input_path, output_path).await,
+            PathType::Xar => self.sign_xar(input_path, output_path).await,
             PathType::Zip | PathType::Other => Err(AppleCodesignError::UnrecognizedPathType),
         }
     }
@@ -50,14 +50,17 @@ impl<'key> UnifiedSigner<'key> {
     ///
     /// This is just a convenience wrapper for [Self::sign_path()] with the same path passed
     /// to both the input and output path.
-    pub fn sign_path_in_place(&self, path: impl AsRef<Path>) -> Result<(), AppleCodesignError> {
+    pub async fn sign_path_in_place(
+        &self,
+        path: impl AsRef<Path>,
+    ) -> Result<(), AppleCodesignError> {
         let path = path.as_ref();
 
-        self.sign_path(path, path)
+        self.sign_path(path, path).await
     }
 
     /// Sign a Mach-O binary.
-    pub fn sign_macho(
+    pub async fn sign_macho(
         &self,
         input_path: impl AsRef<Path>,
         output_path: impl AsRef<Path>,
@@ -83,7 +86,9 @@ impl<'key> UnifiedSigner<'key> {
         let signer = MachOSigner::new(&macho_data)?;
 
         let mut macho_data = vec![];
-        signer.write_signed_binary(&settings, &mut macho_data)?;
+        signer
+            .write_signed_binary(&settings, &mut macho_data)
+            .await?;
         warn!("writing Mach-O to {}", output_path.display());
         write_macho_file(input_path, output_path, &macho_data)?;
 
@@ -91,7 +96,7 @@ impl<'key> UnifiedSigner<'key> {
     }
 
     /// Sign a `.dmg` file.
-    pub fn sign_dmg(
+    pub async fn sign_dmg(
         &self,
         input_path: impl AsRef<Path>,
         output_path: impl AsRef<Path>,
@@ -142,13 +147,13 @@ impl<'key> UnifiedSigner<'key> {
             .read(true)
             .write(true)
             .open(output_path)?;
-        signer.sign_file(&settings, &mut fh)?;
+        signer.sign_file(&settings, &mut fh).await?;
 
         Ok(())
     }
 
     /// Sign a bundle.
-    pub fn sign_bundle(
+    pub async fn sign_bundle(
         &self,
         input_path: impl AsRef<Path>,
         output_path: impl AsRef<Path>,
@@ -158,12 +163,12 @@ impl<'key> UnifiedSigner<'key> {
 
         let mut signer = BundleSigner::new_from_path(input_path)?;
         signer.collect_nested_bundles()?;
-        signer.write_signed_bundle(output_path, &self.settings)?;
+        signer.write_signed_bundle(output_path, &self.settings).await?;
 
         Ok(())
     }
 
-    pub fn sign_xar(
+    pub async fn sign_xar(
         &self,
         input_path: impl AsRef<Path>,
         output_path: impl AsRef<Path>,
@@ -197,13 +202,15 @@ impl<'key> UnifiedSigner<'key> {
             let mut signer = XarSigner::new(reader);
 
             let mut fh = File::create(&output_path_temp)?;
-            signer.sign(
-                &mut fh,
-                signing_key,
-                signing_cert,
-                self.settings.time_stamp_url(),
-                self.settings.certificate_chain().iter().cloned(),
-            )?;
+            signer
+                .sign(
+                    &mut fh,
+                    signing_key,
+                    signing_cert,
+                    self.settings.time_stamp_url(),
+                    self.settings.certificate_chain().iter().cloned(),
+                )
+                .await?;
         }
 
         if output_path.exists() {

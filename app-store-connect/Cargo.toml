@@ -25,4 +25,4 @@ rsa = "0.9.6"
 serde = { version = "1.0.195", features = ["derive"] }
 serde_json = "1.0.111"
 thiserror = "1.0.56"
-x509-certificate = "0.23.1"
+x509-certificate = { git = "https://github.com/danpashin/cryptography-rs", rev = "e793581" }

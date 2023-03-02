@@ -261,15 +261,15 @@ impl DmgSigner {
     ///
     /// `file` is a readable and writable file. The DMG signature will be written
     /// into the source file.
-    pub fn sign_file(
+    pub async fn sign_file(
         &self,
-        settings: &SigningSettings,
+        settings: &SigningSettings<'_>,
         fh: &mut File,
     ) -> Result<(), AppleCodesignError> {
         warn!("signing DMG");
 
         let koly = DmgReader::new(fh)?.koly().clone();
-        let signature = self.create_superblob(settings, fh)?;
+        let signature = self.create_superblob(settings, fh).await?;
 
         Self::write_embedded_signature(fh, koly, &signature)
     }
@@ -322,9 +322,9 @@ impl DmgSigner {
     }
 
     /// Create the embedded signature superblob content.
-    pub fn create_superblob<F: Read + Write + Seek>(
+    pub async fn create_superblob<F: Read + Write + Seek>(
         &self,
-        settings: &SigningSettings,
+        settings: &SigningSettings<'_>,
         fh: &mut F,
     ) -> Result<Vec<u8>, AppleCodesignError> {
         let mut builder = EmbeddedSignatureBuilder::default();
@@ -339,13 +339,15 @@ impl DmgSigner {
         )?;
 
         if let Some((signing_key, signing_cert)) = settings.signing_key() {
-            builder.create_cms_signature(
-                signing_key,
-                signing_cert,
-                settings.time_stamp_url(),
-                settings.certificate_chain().iter().cloned(),
-                settings.signing_time(),
-            )?;
+            builder
+                .create_cms_signature(
+                    signing_key,
+                    signing_cert,
+                    settings.time_stamp_url(),
+                    settings.certificate_chain().iter().cloned(),
+                    settings.signing_time(),
+                )
+                .await?;
         }
 
         builder.create_superblob()

@@ -153,10 +153,10 @@ impl BundleSigner {
     /// The destination directory can be the same as the source directory. However,
     /// if this is done and an error occurs in the middle of signing, the bundle
     /// may be left in an inconsistent or corrupted state and may not be usable.
-    pub fn write_signed_bundle(
+    pub async fn write_signed_bundle(
         &self,
         dest_dir: impl AsRef<Path>,
-        settings: &SigningSettings,
+        settings: &SigningSettings<'_>,
     ) -> Result<DirectoryBundle, AppleCodesignError> {
         let dest_dir = dest_dir.as_ref();
 
@@ -198,10 +198,9 @@ impl BundleSigner {
                 warn!("bundle is in exclusion list; it will be copied instead of signed");
                 copy_bundle(&nested.bundle, &nested_dest_dir)?;
             } else {
-                nested.write_signed_bundle(
-                    nested_dest_dir,
-                    &settings.as_nested_bundle_settings(rel),
-                )?;
+                nested
+                    .write_signed_bundle(nested_dest_dir, &settings.as_nested_bundle_settings(rel))
+                    .await?;
             }
 
             warn!("leaving nested bundle {}", rel);
@@ -212,7 +211,7 @@ impl BundleSigner {
             .get(&None)
             .expect("main bundle should have a key");
 
-        main.write_signed_bundle(dest_dir, settings)
+        main.write_signed_bundle(dest_dir, settings).await
     }
 }
 
@@ -401,7 +400,7 @@ impl<'a, 'key> BundleSigningContext<'a, 'key> {
     ///
     /// Returns Mach-O metadata which can be recorded in a CodeResources file.
 
-    pub fn sign_and_install_macho(
+    pub async fn sign_and_install_macho(
         &self,
         source_path: &Path,
         dest_rel_path: &Path,
@@ -428,7 +427,7 @@ impl<'a, 'key> BundleSigningContext<'a, 'key> {
         settings.import_settings_from_macho(&macho_data)?;
 
         let mut new_data = Vec::<u8>::with_capacity(macho_data.len() + 2_usize.pow(17));
-        signer.write_signed_binary(&settings, &mut new_data)?;
+        signer.write_signed_binary(&settings, &mut new_data).await?;
 
         let dest_path = self.dest_dir.join(dest_rel_path);
 
@@ -465,10 +464,10 @@ impl SingleBundleSigner {
     }
 
     /// Write a signed bundle to the given directory.
-    pub fn write_signed_bundle(
+    pub async fn write_signed_bundle(
         &self,
         dest_dir: impl AsRef<Path>,
-        settings: &SigningSettings,
+        settings: &SigningSettings<'_>,
     ) -> Result<DirectoryBundle, AppleCodesignError> {
         let dest_dir = dest_dir.as_ref();
 
@@ -614,11 +613,9 @@ impl SingleBundleSigner {
             settings,
         };
 
-        resources_builder.walk_and_seal_directory(
-            &self.root_bundle_path,
-            self.bundle.root_dir(),
-            &context,
-        )?;
+        resources_builder
+            .walk_and_seal_directory(&self.root_bundle_path, self.bundle.root_dir(), &context)
+            .await?;
 
         let info_plist_data = std::fs::read(self.bundle.info_plist_path())?;
 
@@ -669,7 +666,7 @@ impl SingleBundleSigner {
             settings.import_settings_from_macho(&macho_data)?;
 
             let mut new_data = Vec::<u8>::with_capacity(macho_data.len() + 2_usize.pow(17));
-            signer.write_signed_binary(&settings, &mut new_data)?;
+            signer.write_signed_binary(&settings, &mut new_data).await?;
 
             let dest_path = dest_dir_root.join(exe.relative_path());
             info!("writing signed main executable to {}", dest_path.display());

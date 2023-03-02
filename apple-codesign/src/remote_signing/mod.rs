@@ -950,6 +950,8 @@ impl Sign for InitiatorClient {
     }
 }
 
+unsafe impl Sync for InitiatorClient {}
+
 impl KeyInfoSigner for InitiatorClient {}
 
 impl PublicKeyPeerDecrypt for InitiatorClient {
