@@ -25,6 +25,7 @@ pub enum AppleCodesignError {
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 
+    #[cfg(feature = "cli")]
     #[error("CLI error: {0}")]
     CliDialoguer(#[from] dialoguer::Error),
 
@@ -52,6 +53,7 @@ pub enum AppleCodesignError {
     #[error("JSON serialization error: {0}")]
     SerdeJson(#[from] serde_json::Error),
 
+    #[cfg(feature = "cli")]
     #[error("YAML serialization error: {0}")]
     SerdeYaml(#[from] serde_yaml::Error),
 
@@ -365,6 +367,7 @@ pub enum AppleCodesignError {
     #[error("internal API / logic error: {0}")]
     LogicError(String),
 
+    #[cfg(feature = "notarize")]
     #[error("zip structs error: {0}")]
     ZipStructs(#[from] zip_structs::zip_error::ZipReadError),
 

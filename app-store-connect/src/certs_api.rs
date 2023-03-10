@@ -117,7 +117,8 @@ pub struct CertificateCreateRequestAttributes {
     pub csr_content: String,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, clap::ValueEnum)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "cli", derive(clap::ValueEnum))]
 pub enum CertificateType {
     Development,
     Distribution,

@@ -143,7 +143,8 @@ pub struct RefData {
     pub r#type: String,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, clap::ValueEnum)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "cli", derive(clap::ValueEnum))]
 pub enum ProfileType {
     IosAppDevelopment,
     MacAppDevelopment,

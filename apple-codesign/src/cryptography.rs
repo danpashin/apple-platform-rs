@@ -11,7 +11,6 @@ use {
     },
     apple_xar::table_of_contents::ChecksumType as XarChecksumType,
     bytes::Bytes,
-    clap::ValueEnum,
     der::{asn1, Decode, Document, Encode, SecretDocument},
     digest::DynDigest,
     elliptic_curve::{
@@ -481,7 +480,8 @@ impl InMemoryPrivateKey {
 }
 
 /// Represents a digest type encountered in code signature data structures.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "cli", derive(clap::ValueEnum))]
 pub enum DigestType {
     None,
     Sha1,
@@ -489,7 +489,7 @@ pub enum DigestType {
     Sha256Truncated,
     Sha384,
     Sha512,
-    #[value(skip)]
+    #[cfg_attr(feature = "cli", value(skip))]
     Unknown(u8),
 }
 

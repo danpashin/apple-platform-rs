@@ -10,12 +10,17 @@ homepage = "https://github.com/indygreg/apple-platform-rs"
 repository = "https://github.com/indygreg/apple-platform-rs.git"
 readme = "README.md"
 
+[[bin]]
+name = "app-store-connect"
+path = "src/main.rs"
+required-features = ["cli"]
+
 [dependencies]
 anyhow = "1.0.79"
 base64 = "0.21.7"
-clap = { version = "4.4.17", features = ["derive"] }
+clap = { version = "4.4.17", features = ["derive"], optional = true }
 dirs = "5.0.1"
-env_logger = "0.10.1"
+env_logger = { version = "0.10.1", optional = true }
 jsonwebtoken = "9.2.0"
 log = "0.4.20"
 pem = "3.0.3"
@@ -26,3 +31,10 @@ serde = { version = "1.0.195", features = ["derive"] }
 serde_json = "1.0.111"
 thiserror = "1.0.56"
 x509-certificate = { git = "https://github.com/danpashin/cryptography-rs", rev = "e793581" }
+
+[features]
+default = ["cli"]
+cli = [
+    "clap",
+    "env_logger",
+]

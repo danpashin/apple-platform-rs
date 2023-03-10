@@ -115,7 +115,10 @@ mod bundle_signing;
 pub use bundle_signing::*;
 mod certificate;
 pub use certificate::*;
+
+#[cfg(feature = "cli")]
 pub mod cli;
+
 mod code_directory;
 pub use code_directory::*;
 pub mod code_requirement;
