@@ -6,6 +6,60 @@
 
 Released on ReleaseDate.
 
+* When signing a bundle in `--shallow` mode, we no longer sign Mach-O binaries
+  that aren't the *main* bundle binary. The new behavior is compatible with the
+  behavior of Apple's `codesign`. (#148)
+* Fixed a bug where signing of a bundle containing child bundles could sign and
+  install certain files multiple times. This could result in a child bundle having
+  an incorrect signature. (#149)
+* MSRV 1.78 -> 1.81.
+* `aws-sdk-s3` 1.24 -> 1.59.
+* `clap` 4.4 -> 4.5.
+* `minicbor` 0.24 -> 0.25.
+
+## 0.28.0
+
+Released on 2024-11-03.
+
+* Fixed `env_logger` construction so `RUST_LOG` environment variable is
+  respected. (#162)
+* MSRV 1.70 -> 1.78.
+* Improve logging of S3 upload failures. We should now hopefully print something
+  more useful than `s3 upload error: unhandled error` on failures.
+* `Info.plist` path handling should be more robust. This should fix errors
+  like `I/O error: No such file or directory` when signing Frameworks. (#163)
+* Enabled `http2` feature of `reqwest` crate. This may provide better HTTP/2.0
+  compatibility.
+* `aws-config` 1.1 -> 1.5.
+* `aws-sdk-s3` 1.12 -> 1.24.
+* `aws-smithy-types` 1.1 -> 1.2.
+* `base64` 0.21 -> 0.22.
+* `bitflags` 2.4 -> 2.6.
+* `bytes` 1.5 -> 1.8.
+* `cryptographic-message-syntax` 0.26 -> 0.27.
+* `env_logger` 0.10 -> 0.11.
+* `goblin` 0.8 -> 0.9.
+* `minicbor` 0.20 -> 0.24.
+* `object` 0.32 -> 0.36.
+* `oid-registry` 0.6 -> 0.7.
+* `once_cell` 1.19 -> 1.20.
+* `plist` 1.6 -> 1.7.
+* `rasn` 0.12 -> 0.20.
+* `rayon` 1.8 -> 1.10.
+* `regex` 1.10 -> 1.11.
+* `reqwest` 0.11 -> 0.12.
+* `security-framework` 2.9 -> 2.11.
+* `subtle` 2.5 -> 2.6.
+* `tempfile` 3.9 -> 3.13.
+* `tokio` 1.35 -> 1.41.
+* `tungstenite` 0.21 -> 0.24.
+* `uuid` 1.6 -> 1.11.
+* `walkdir` 2.4 -> 2.5.
+* `widestring` 1.0 -> 1.1.
+* `x509-certificate` 0.23 -> 0.24.
+* `zeroize` 1.7 -> 1.8.
+* `zip` 0.6 -> 2.2.
+
 ## 0.27.0
 
 Released on 2024-01-17.

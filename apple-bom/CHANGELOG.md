@@ -6,6 +6,14 @@
 
 Released on ReleaseDate.
 
+* `clap` 4.4 -> 4.5.
+
+## 0.3.0
+
+Released on 2024-11-03.
+
+* `crc32fast` 1.3 -> 1.4.
+
 ## 0.2.0
 
 Released on 2023-11-06.

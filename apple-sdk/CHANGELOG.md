@@ -6,9 +6,17 @@
 
 Released on ReleaseDate.
 
+## 0.6.0
+
+Released on 2024-11-03.
+
 * XROS support. `Platform` enumeration added `XrOs` and `XrOsSimulator`
   variants. The `aarch64-apple-xros-sim` and `*-apple-xros` triples are
   now recognized as XROS.
+* The developer directory configured with `xcode-select --switch PATH` can now
+  be retrieved by using `DeveloperDirectory::from_xcode_select_paths`, and
+  this is done by default when searching for SDKs. (#154)
+* `plist` 1.6 -> 1.7.
 
 ## 0.5.2
 

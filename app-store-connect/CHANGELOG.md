@@ -6,6 +6,27 @@
 
 Released on ReleaseDate.
 
+* MSRV 1.78 -> 1.81.
+* `clap` 4.4 -> 4.5.
+* `jsonwebtoken` 9.2 -> 9.3.
+
+## 0.6.0
+
+Released on 2024-11-03.
+
+* New APIs and CLI commands to: list capabilities with a bundle ID;
+  list profiles associated with a bundle ID; get bundle ID associated with
+  a profile; list certificates associated with a profile; enable capacity
+  for a bundle ID. (#164)
+* Added `IosDistribution` variant to `CertificateType` enum.
+* Enabled `http2` feature of `reqwest` crate. This may provide better HTTP/2.0
+  compatibility.
+* MSRV 1.70 -> 1.78.
+* `base64` 0.21 -> 0.22.
+* `env_logger` 0.10 -> 0.11.
+* `reqwest` 0.11 -> 0.12
+* `x509-certificate` 0.23 -> 0.24.
+
 ## 0.5.0
 
 Released on 2024-01-17.

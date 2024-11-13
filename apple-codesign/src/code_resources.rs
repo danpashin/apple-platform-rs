@@ -1104,7 +1104,7 @@ impl CodeResourcesBuilder {
         &mut self,
         root_bundle_path: &Path,
         bundle_root: &Path,
-        context: &BundleSigningContext<'_, '_>,
+        context: &mut BundleSigningContext<'_, '_>,
     ) -> Result<(), AppleCodesignError> {
         let mut skipping_rel_dirs = BTreeSet::new();
 
@@ -1319,7 +1319,7 @@ impl CodeResourcesBuilder {
         rel_path: &Path,
         rel_path_normalized: &str,
         root_rel_path: &str,
-        context: &BundleSigningContext<'_, '_>,
+        context: &mut BundleSigningContext<'_, '_>,
         optional: bool,
     ) -> Result<(), AppleCodesignError> {
         let macho_info = if context
@@ -1354,34 +1354,52 @@ impl CodeResourcesBuilder {
         root_rel_path: &str,
         omit: bool,
         optional: bool,
-        context: &BundleSigningContext<'_, '_>,
+        context: &mut BundleSigningContext<'_, '_>,
     ) -> Result<(), AppleCodesignError> {
-        let mut need_install = true;
+        let mut need_install = !context.previously_installed_paths.contains(rel_path);
 
-        // Only seal if the omit flag is unset. But install unconditionally
-        // in all cases.
+        // Only seal if the omit flag is unset.
         if !omit {
             // Unlike Apple's tooling, we recognize Mach-O binaries when the nested
             // flag isn't set and we automatically sign.
             //
-            // When we seal the file, we treat it as a regular file since the
-            // nested flag isn't set. Note that we need to read the signed/installed
-            // version of the file since signing will change its content.
-
-            let read_path = if crate::reader::path_is_macho(full_path)?
+            // Unless the path is marked for exclusion or shallow signing mode is
+            // active.
+            //
+            // The reason we exclude in shallow mode is that shallow mode is supposed
+            // to behave like Apple's `codesign` and that tool only signs the bundle's
+            // "main" Mach-O binary, not other binaries.
+            let sign_macho = need_install
+                && crate::reader::path_is_macho(full_path)?
                 && !context
                     .settings
                     .path_exclusion_pattern_matches(root_rel_path)
-            {
+                && !context.settings.shallow();
+
+            let read_path = if sign_macho {
                 info!(
                     "non-nested file is a Mach-O binary; signing accordingly {}",
                     rel_path.display()
                 );
                 need_install = false;
+
+                // We need to read the signed/installed version of the file since
+                // signing will change its content.
                 context.sign_and_install_macho(full_path, rel_path).await?.0
             } else {
                 info!("sealing regular file {}", rel_path_normalized);
-                full_path.to_path_buf()
+
+                // If we need to install the file, seal the source file. Else since the
+                // file is already installed, seal the destination file.
+                //
+                // For regular files this distinction doesn't matter. But for Mach-O
+                // binaries it ensures we pick up the final signature, not the source
+                // file.
+                if need_install {
+                    full_path.to_path_buf()
+                } else {
+                    context.dest_dir.join(rel_path)
+                }
             };
 
             let digests = MultiDigest::from_path(read_path)?;
@@ -1392,6 +1410,8 @@ impl CodeResourcesBuilder {
                 FilesFlavor::Rules2
             };
 
+            // When we seal the file, we treat it as a regular file since the
+            // nested flag isn't set.
             self.resources
                 .seal_regular_file(flavor, rel_path_normalized, digests, optional)?;
         }
@@ -1409,7 +1429,7 @@ impl CodeResourcesBuilder {
         rel_path: &Path,
         rel_path_normalized: &str,
         omit: bool,
-        context: &BundleSigningContext,
+        context: &mut BundleSigningContext,
     ) -> Result<(), AppleCodesignError> {
         let link_target = std::fs::read_link(full_path)?
             .to_string_lossy()

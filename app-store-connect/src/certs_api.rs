@@ -123,6 +123,7 @@ pub enum CertificateType {
     Development,
     Distribution,
     DeveloperIdApplication,
+    IosDistribution,
 }
 
 impl std::fmt::Display for CertificateType {
@@ -131,6 +132,7 @@ impl std::fmt::Display for CertificateType {
             Self::Development => "DEVELOPMENT",
             Self::Distribution => "DISTRIBUTION",
             Self::DeveloperIdApplication => "DEVELOPER_ID_APPLICATION",
+            Self::IosDistribution => "IOS_DISTRIBUTION",
         };
         write!(f, "{s}")
     }

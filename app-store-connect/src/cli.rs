@@ -4,7 +4,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use crate::bundle_api::{BundleId, BundleIdPlatform};
+use crate::bundle_api::{
+    BundleCapability, BundleId, BundleIdCapabilityCreateRequestDataAttributes, BundleIdPlatform,
+};
 use crate::certs_api::{self, Certificate, CertificateType};
 use crate::device_api::Device;
 use crate::profile_api::{Profile, ProfileType};
@@ -99,8 +101,22 @@ pub enum BundleCommand {
     },
     List,
     Get {
-        /// Id of certificate.
+        /// Id of bundle id.
         id: String,
+    },
+    GetProfiles {
+        /// Id of bundle id.
+        id: String,
+    },
+    GetCapabilities {
+        /// Id of bundle id.
+        id: String,
+    },
+    EnableCapability {
+        /// Id of bundle id.
+        id: String,
+        /// Capability type.
+        capability: String,
     },
     Delete {
         /// Id of bundle id to revoke.
@@ -129,6 +145,29 @@ impl BundleCommand {
                 print_bundle_id_header();
                 print_bundle_id(&resp.data);
             }
+            Self::GetCapabilities { id } => {
+                let resp = client.list_bundle_capabilities(&id)?;
+                print_capability_header();
+                for capability in resp.data {
+                    print_capability(&capability);
+                }
+            }
+            Self::EnableCapability { id, capability } => {
+                client.enable_bundle_id_capability(
+                    &id,
+                    BundleIdCapabilityCreateRequestDataAttributes {
+                        capability_type: capability.clone(),
+                    },
+                )?;
+                println!("capability {capability} enabled for bundle ID {id}");
+            }
+            Self::GetProfiles { id } => {
+                let resp = client.list_bundle_profiles(&id)?;
+                print_profile_header();
+                for profile in &resp.data {
+                    print_profile(profile);
+                }
+            }
             Self::Delete { id } => {
                 client.delete_bundle_id(&id)?;
             }
@@ -145,6 +184,17 @@ fn print_bundle_id(bundle_id: &BundleId) {
     println!(
         "{: <10} | {: <20} | {: <30}",
         bundle_id.id, bundle_id.attributes.name, bundle_id.attributes.identifier,
+    );
+}
+
+fn print_capability_header() {
+    println!("{: <10} | {: <20}", "id", "type");
+}
+
+fn print_capability(capability: &BundleCapability) {
+    println!(
+        "{: <10} | {: <20}",
+        capability.id, capability.attributes.capability_type
     );
 }
 
@@ -302,11 +352,19 @@ pub enum ProfileCommand {
     },
     List,
     Get {
-        /// Id of device.
+        /// Id of profile.
         id: String,
     },
     Delete {
-        /// Id of device.
+        /// Id of profile.
+        id: String,
+    },
+    GetBundleId {
+        /// Id of profile.
+        id: String,
+    },
+    GetCertificates {
+        /// Id of profile.
         id: String,
     },
 }
@@ -346,6 +404,18 @@ impl ProfileCommand {
             }
             Self::Delete { id } => {
                 client.delete_profile(&id)?;
+            }
+            Self::GetBundleId { id } => {
+                let bundle_id = client.get_profile_bundle_id(&id)?;
+                print_bundle_id_header();
+                print_bundle_id(&bundle_id.data);
+            }
+            Self::GetCertificates { id } => {
+                let resp = client.list_profile_certificates(&id)?;
+                print_certificate_header();
+                for cert in &resp.data {
+                    print_certificate(cert);
+                }
             }
         }
         Ok(())

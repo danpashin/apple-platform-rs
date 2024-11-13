@@ -1,9 +1,9 @@
 [package]
 name = "apple-flat-package"
-version = "0.18.0"
+version = "0.19.0"
 authors = ["Gregory Szorc <gregory.szorc@gmail.com>"]
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.81"
 license = "MPL-2.0"
 description = "Apple flat package (.pkg) format handling"
 keywords = ["apple", "flat-package", "pkgbuild", "pkg", "productbuild"]
@@ -12,16 +12,16 @@ repository = "https://github.com/indygreg/apple-platform-rs.git"
 readme = "README.md"
 
 [dependencies]
-flate2 = "1.0.28"
-scroll = { version ="0.12.0", features = ["derive"] }
+flate2 = "1.0.34"
+scroll = { version = "0.12.0", features = ["derive"] }
 serde-xml-rs = "0.6.0"
-serde = { version = "1.0.195", features = ["derive"] }
-thiserror = "1.0.56"
+serde = { version = "1.0.214", features = ["derive"] }
+thiserror = "1.0.68"
 
 [dependencies.apple-xar]
 path = "../apple-xar"
-version = "0.18.0"
+version = "0.19.0"
 
 [dependencies.cpio-archive]
 path = "../cpio-archive"
-version = "0.9.0"
+version = "0.10.0"
