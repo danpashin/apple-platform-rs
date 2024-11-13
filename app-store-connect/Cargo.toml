@@ -30,7 +30,7 @@ rsa = "0.9.6"
 serde = { version = "1.0.214", features = ["derive"] }
 serde_json = "1.0.132"
 thiserror = "1.0.68"
-x509-certificate = { git = "https://github.com/danpashin/cryptography-rs", rev = "fd4f72a" }
+x509-certificate = { git = "https://github.com/danpashin/cryptography-rs", rev = "fd4f72a3" }
 
 [features]
 default = ["cli"]

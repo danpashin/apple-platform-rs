@@ -16,7 +16,7 @@ base64 = "0.22.1"
 bcder = { version = "0.7.4", optional = true }
 bzip2 = "0.4.4"
 chrono = { version = "0.4.38", features = ["serde"] }
-cryptographic-message-syntax = { git = "https://github.com/danpashin/cryptography-rs", rev = "fd4f72a", optional = true }
+cryptographic-message-syntax = { git = "https://github.com/danpashin/cryptography-rs", rev = "fd4f72a3", optional = true }
 digest = "0.10.7"
 log = "0.4.22"
 md-5 = "0.10.6"
@@ -32,7 +32,7 @@ signature = { version = "2.2.0", features = ["std"], optional = true }
 thiserror = "1.0.68"
 url = "2.5.3"
 xml-rs = "0.8.23"
-x509-certificate = { git = "https://github.com/danpashin/cryptography-rs", rev = "fd4f72a" }
+x509-certificate = { git = "https://github.com/danpashin/cryptography-rs", rev = "fd4f72a3" }
 xz2 = { version = "0.1.7", features = ["static"] }
 
 [features]
