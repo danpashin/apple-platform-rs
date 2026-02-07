@@ -1,8 +1,8 @@
 [package]
 name = "app-store-connect"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
-rust-version = "1.81"
+rust-version = "1.88"
 license = "Apache-2.0 OR MIT"
 description = "Apple App Store Connect API and client"
 keywords = ["apple"]
@@ -16,21 +16,21 @@ path = "src/main.rs"
 required-features = ["cli"]
 
 [dependencies]
-anyhow = "1.0.93"
+anyhow = "1.0.100"
 base64 = "0.22.1"
-clap = { version = "4.5.20", features = ["derive"], optional = true }
-dirs = "5.0.1"
-env_logger = { version = "0.11.5", optional = true }
-jsonwebtoken = "9.3.0"
-log = "0.4.22"
-pem = "3.0.4"
+clap = { version = "4.5.54", features = ["derive"], optional = true }
+dirs = "6.0.0"
+env_logger = { version = "0.11.8", optional = true }
+jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
+log = "0.4.29"
+pem = "3.0.6"
 rand = "0.8.5"
-reqwest = { version = "0.12.9", default-features = false, features = ["blocking", "http2", "json", "rustls-tls-native-roots"] }
-rsa = "0.9.6"
-serde = { version = "1.0.214", features = ["derive"] }
-serde_json = "1.0.132"
-thiserror = "1.0.68"
-x509-certificate = { git = "https://github.com/danpashin/cryptography-rs", rev = "fd4f72a3" }
+reqwest = { version = "0.12.28", default-features = false, features = ["blocking", "http2", "json", "rustls-tls-native-roots"] }
+rsa = "0.9.10"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+thiserror = "2.0.18"
+x509-certificate = { git = "https://github.com/danpashin/cryptography-rs", rev = "2061ff3e" }
 
 [features]
 default = ["cli"]

@@ -4,7 +4,7 @@
 
 use apple_codesign::AppleCodesignError;
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() {
     let exit_code = match apple_codesign::cli::main_impl().await {
         Ok(()) => 0,
@@ -18,7 +18,9 @@ async fn main() {
                     })
                 })
             });
-            if let Some(profile) = err.profile.as_ref() { eprintln!("  in profile: {}", profile) }
+            if let Some(profile) = err.profile.as_ref() {
+                eprintln!("  in profile: {}", profile)
+            }
             eprintln!("  problem key: {}", err.path.join(", "));
             eprintln!("  problem: {:?}", err.kind);
 

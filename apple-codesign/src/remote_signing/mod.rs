@@ -214,17 +214,6 @@ impl ServerMessage {
     }
 }
 
-/// Response messages seen from server.
-#[derive(Clone, Debug, Deserialize)]
-#[serde(untagged)]
-enum ServerPayload {
-    Error(ServerError),
-    Greeting(ServerGreeting),
-    SessionJoined(ServerJoined),
-    PeerMessage(ServerPeerMessage),
-    SessionClosed(ServerSessionClosed),
-}
-
 #[derive(Clone, Debug, Deserialize)]
 struct ServerError {
     code: String,
@@ -364,9 +353,7 @@ pub type SessionInfoCallback = fn(sjs_base64: &str, sjs_pem: &str) -> Result<(),
 fn create_websocket(
     req: impl IntoClientRequest,
 ) -> Result<WebSocket<MaybeTlsStream<TcpStream>>, RemoteSignError> {
-    let config = WebSocketConfig {
-        ..Default::default()
-    };
+    let config = WebSocketConfig::default();
 
     let req = req.into_client_request()?;
     warn!("connecting to {}", req.uri());
@@ -477,7 +464,7 @@ impl UnjoinedSigningClient {
         signing_cert: CapturedX509Certificate,
         certificates: Vec<CapturedX509Certificate>,
         default_server_url: String,
-    ) -> Result<SigningClient, RemoteSignError> {
+    ) -> Result<SigningClient<'_>, RemoteSignError> {
         // An error here could result in the peer hanging indefinitely because the session
         // is unjoined. Ideally we'd recover from this by attempting to join with an error.
         // However, we may not even be able to obtain the session ID since sometimes it is
@@ -566,7 +553,7 @@ impl UnjoinedSigningClient {
         signing_key: &dyn KeyInfoSigner,
         signing_cert: CapturedX509Certificate,
         certificates: Vec<CapturedX509Certificate>,
-    ) -> Result<SigningClient, RemoteSignError> {
+    ) -> Result<SigningClient<'_>, RemoteSignError> {
         let session_id = join_context.session_id.clone();
 
         warn!("joining session...");
@@ -811,7 +798,7 @@ impl PairedClient {
 
         let cert = res.as_signing_certificate()?;
 
-        if let Some(cert) = cert.certificates.get(0) {
+        if let Some(cert) = cert.certificates.first() {
             let cert_der = STANDARD_ENGINE.decode(&cert.certificate)?;
             let chain_der = cert
                 .chain

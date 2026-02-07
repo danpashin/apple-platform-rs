@@ -6,6 +6,36 @@
 
 Released on ReleaseDate.
 
+* PKCS#11 support. (Support signing with Google Cloud HSM, SoftHSM, other
+  PKCS#11 based signing providers.) (#198)
+* Mach-O file sniffing has been refined to prevent false positives on
+  Java `.class` files. (#175)
+* Interpret empty signature data in Mach-O load command as a missing signature.
+  (#183)
+* Handle DER plists encoded as a SET. (#182)
+* Notarization network polling now handles some transient network errors. (#174)
+* MSRV 1.81 -> 1.88.
+* `aws-smithy-http` 0.60 -> 0.62.
+* `cryptographic-message-syntax` 0.27 -> 0.28.
+* `dialoguer` 0.11 -> 0.12.
+* `dirs` 5 -> 6.
+* `goblin` 0.9 -> 0.10.
+* `md5` 0.7 -> 0.8.
+* `minicbor` 0.25 -> 2.1.
+* `object` 0.26 -> 0.28.
+* `oid-registry` 0.7 -> 0.8.
+* `scroll` 0.12 -> 0.13.
+* `security-framework` 2.11 -> 3.5.
+* `tungstenite` 0.24 -> 0.28.
+* `windows-sys` 0.59 -> 0.61.
+* `x509-certificate` 0.24 -> 0.25.
+* `xml-rs` 0.8 -> 1.0.
+* `zip` 2.4 -> 7.0.
+
+## 0.29.0
+
+Released on 2024-11-29.
+
 * When signing a bundle in `--shallow` mode, we no longer sign Mach-O binaries
   that aren't the *main* bundle binary. The new behavior is compatible with the
   behavior of Apple's `codesign`. (#148)
@@ -16,6 +46,7 @@ Released on ReleaseDate.
 * `aws-sdk-s3` 1.24 -> 1.59.
 * `clap` 4.4 -> 4.5.
 * `minicbor` 0.24 -> 0.25.
+* `thiserror` 1.0 -> 2.0.
 
 ## 0.28.0
 

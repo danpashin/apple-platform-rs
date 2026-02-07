@@ -480,23 +480,18 @@ impl InMemoryPrivateKey {
 }
 
 /// Represents a digest type encountered in code signature data structures.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 #[cfg_attr(feature = "cli", derive(clap::ValueEnum))]
 pub enum DigestType {
     None,
     Sha1,
+    #[default]
     Sha256,
     Sha256Truncated,
     Sha384,
     Sha512,
     #[cfg_attr(feature = "cli", value(skip))]
     Unknown(u8),
-}
-
-impl Default for DigestType {
-    fn default() -> Self {
-        Self::Sha256
-    }
 }
 
 impl TryFrom<DigestType> for DigestAlgorithm {

@@ -21,6 +21,7 @@ actions-bootstrap-rust-linux:
 actions-bootstrap-rust-macos:
 
 actions-bootstrap-rust-windows:
+  choco install nasm
 
 # Trigger a workflow on a branch.
 ci-run workflow branch="ci-test":
@@ -153,7 +154,7 @@ apple-codesign-release-prepare commit tag:
   rm -rf dist/apple-codesign*
   just assemble-exe-artifacts rcodesign {{commit}} dist/apple-codesign-artifacts
 
-  for triple in aarch64-apple-darwin aarch64-unknown-linux-musl i686-pc-windows-msvc x86_64-apple-darwin x86_64-pc-windows-msvc x86_64-unknown-linux-musl; do
+  for triple in aarch64-apple-darwin aarch64-unknown-linux-gnu aarch64-unknown-linux-musl i686-pc-windows-msvc x86_64-apple-darwin x86_64-pc-windows-msvc x86_64-unknown-linux-gnu x86_64-unknown-linux-musl; do
     release_name=apple-codesign-{{tag}}-${triple}
     source=dist/apple-codesign-artifacts/exe-rcodesign-${triple}
     dest=dist/apple-codesign-stage/${release_name}

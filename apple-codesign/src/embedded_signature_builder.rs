@@ -34,19 +34,14 @@ pub const CD_DIGESTS_PLIST_OID: bcder::ConstOid = Oid(&[42, 134, 72, 134, 247, 9
 /// 1.2.840.113635.100.9.2
 pub const CD_DIGESTS_OID: bcder::ConstOid = Oid(&[42, 134, 72, 134, 247, 99, 100, 9, 2]);
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 enum BlobsState {
+    #[default]
     Empty,
     SpecialAdded,
     CodeDirectoryAdded,
     SignatureAdded,
     TicketAdded,
-}
-
-impl Default for BlobsState {
-    fn default() -> Self {
-        Self::Empty
-    }
 }
 
 /// An entity for producing and writing [EmbeddedSignature].
@@ -82,7 +77,7 @@ impl<'a> EmbeddedSignatureBuilder<'a> {
     }
 
     /// Obtain the code directory registered with this instance.
-    pub fn code_directory(&self) -> Option<&CodeDirectoryBlob> {
+    pub fn code_directory(&self) -> Option<&CodeDirectoryBlob<'_>> {
         self.blobs.get(&CodeSigningSlot::CodeDirectory).map(|blob| {
             if let BlobData::CodeDirectory(cd) = blob {
                 (*cd).as_ref()
@@ -149,7 +144,7 @@ impl<'a> EmbeddedSignatureBuilder<'a> {
         &mut self,
         cd_slot: CodeSigningSlot,
         mut cd: CodeDirectoryBlob<'a>,
-    ) -> Result<&CodeDirectoryBlob, AppleCodesignError> {
+    ) -> Result<&CodeDirectoryBlob<'_>, AppleCodesignError> {
         if matches!(self.state, BlobsState::SignatureAdded) {
             return Err(AppleCodesignError::SignatureBuilder(
                 "cannot add code directory after signature data added",
@@ -180,7 +175,7 @@ impl<'a> EmbeddedSignatureBuilder<'a> {
     pub fn add_alternative_code_directory(
         &mut self,
         cd: CodeDirectoryBlob<'a>,
-    ) -> Result<&CodeDirectoryBlob, AppleCodesignError> {
+    ) -> Result<&CodeDirectoryBlob<'_>, AppleCodesignError> {
         let mut our_slot = CodeSigningSlot::AlternateCodeDirectory0;
 
         for slot in self.blobs.keys() {

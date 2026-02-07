@@ -929,11 +929,7 @@ impl AppleCertificate for CapturedX509Certificate {
             .filter_map(|extension| {
                 if extension.id.as_ref() == OID_EXTENDED_KEY_USAGE.as_ref() {
                     if let Some(oid) = extension.try_decode_sequence_single_oid() {
-                        if let Ok(purpose) = ExtendedKeyUsagePurpose::try_from(&oid) {
-                            Some(purpose)
-                        } else {
-                            None
-                        }
+                        ExtendedKeyUsagePurpose::try_from(&oid).ok()
                     } else {
                         None
                     }
@@ -948,13 +944,7 @@ impl AppleCertificate for CapturedX509Certificate {
         let cert: &x509_certificate::rfc5280::Certificate = self.as_ref();
 
         cert.iter_extensions()
-            .filter_map(|extension| {
-                if let Ok(value) = CodeSigningCertificateExtension::try_from(&extension.id) {
-                    Some(value)
-                } else {
-                    None
-                }
-            })
+            .filter_map(|extension| CodeSigningCertificateExtension::try_from(&extension.id).ok())
             .collect::<Vec<_>>()
     }
 
@@ -1328,13 +1318,7 @@ impl AppleCertificateBuilder for X509CertificateBuilder {
     fn apple_code_signing_extensions(&self) -> Vec<CodeSigningCertificateExtension> {
         self.extensions()
             .iter()
-            .filter_map(|ext| {
-                if let Ok(e) = CodeSigningCertificateExtension::try_from(&ext.id) {
-                    Some(e)
-                } else {
-                    None
-                }
-            })
+            .filter_map(|ext| CodeSigningCertificateExtension::try_from(&ext.id).ok())
             .collect::<Vec<_>>()
     }
 }

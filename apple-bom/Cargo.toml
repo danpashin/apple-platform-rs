@@ -3,7 +3,7 @@ name = "apple-bom"
 version = "0.3.0"
 authors = ["Gregory Szorc <gregory.szorc@gmail.com>"]
 edition = "2021"
-rust-version = "1.81"
+rust-version = "1.88"
 license = "MIT OR Apache-2.0"
 description = "Apple Bill of Materials (BOM) data format"
 keywords = ["bom", "apple", "macos", "pkg"]
@@ -16,10 +16,10 @@ name = "odumpbom"
 path = "src/dumpbom.rs"
 
 [dependencies]
-clap = "4.5.20"
-chrono = "0.4.38"
-crc32fast = "1.4.2"
+clap = "4.5.54"
+chrono = "0.4.43"
+crc32fast = "1.5.0"
 hex = "0.4.3"
-scroll = { version = "0.12.0", features = ["derive"] }
+scroll = { version = "0.13.0", features = ["derive"] }
 simple-file-manifest = "0.11.0"
-thiserror = "1.0.68"
+thiserror = "2.0.18"

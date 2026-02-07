@@ -6,6 +6,21 @@
 
 Released on ReleaseDate.
 
+* `Options` now has `custom_location` and `custom_location_allow_alternate_volumes`
+  fields (#249).
+* `Distribution`'s `options` field type `Option<Options>` -> `Vec<Options>`.
+* `Domain`'s fields have been changed from `bool` -> `Option<bool>`.
+* `Product`'s `id` field type `String` -> `Option<String>`.
+* `VolumeCheck`'s `script` field has been changed from `bool` -> `Option<bool>`.
+  (#213)
+* MSRV 1.81 -> 1.88.
+* `scroll` 0.12 -> 0.13.
+* `serde-xml-rs` 0.6. -> 0.8.
+
+## 0.20.0
+
+Released on 2024-11-29.
+
 ## 0.19.0
 
 Released on 2024-11-03.

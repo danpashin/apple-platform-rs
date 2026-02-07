@@ -140,7 +140,7 @@ impl NotaryApi {
     /// Resolve a notarizer from arguments.
     fn notarizer(&self) -> Result<Notarizer, AppleCodesignError> {
         if let Some(api_key_path) = &self.api_key_path {
-            Notarizer::from_api_key(api_key_path)
+            Notarizer::from_api_key_file(api_key_path)
         } else if let (Some(issuer), Some(key)) = (&self.api_issuer, &self.api_key) {
             Notarizer::from_api_key_id(issuer, key)
         } else {
@@ -1621,7 +1621,7 @@ impl CliCommand for SmartcardScan {
             println!("Device {}: {}", index, reader.name());
 
             if let Ok(yk) = reader.open() {
-                let mut yk = crate::yubikey::YubiKey::from(yk);
+                let yk = crate::yubikey::YubiKey::from(yk);
                 println!("Device {}: Serial: {}", index, yk.inner()?.serial());
                 println!("Device {}: Version: {}", index, yk.inner()?.version());
 
@@ -2527,9 +2527,7 @@ pub async fn main_impl() -> Result<(), AppleCodesignError> {
 
     let mut builder = env_logger::Builder::new();
 
-    builder
-        .filter_level(log_level)
-        .parse_default_env();
+    builder.filter_level(log_level).parse_default_env();
 
     // Disable log context except at higher log levels.
     if log_level <= LevelFilter::Info {

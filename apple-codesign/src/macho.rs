@@ -113,6 +113,11 @@ impl<'a> MachOBinary<'a> {
             let signature_segment_end_offset =
                 signature_segment_start_offset + linkedit_data_command.datasize as usize;
 
+            // Signature can be empty.
+            if signature_segment_end_offset <= signature_segment_start_offset {
+                return Ok(None);
+            }
+
             let signature_data =
                 &linkedit.data[signature_segment_start_offset..signature_segment_end_offset];
 
@@ -136,7 +141,7 @@ impl<'a> MachOBinary<'a> {
     ///
     /// Returns `Ok(None)` if no signature exists, `Ok(Some)` if it does, or
     /// `Err` if there is a parse error.
-    pub fn code_signature(&self) -> Result<Option<EmbeddedSignature>, AppleCodesignError> {
+    pub fn code_signature(&self) -> Result<Option<EmbeddedSignature<'_>>, AppleCodesignError> {
         if let Some(signature) = self.find_signature_data()? {
             Ok(Some(EmbeddedSignature::from_bytes(
                 signature.signature_data,
@@ -642,7 +647,7 @@ impl<'a> MachFile<'a> {
     /// Iterate [MachO] instances in this data.
     ///
     /// The `Option<usize>` is `Some` if this is a universal Mach-O or `None` otherwise.
-    pub fn iter_macho(&self) -> impl Iterator<Item = &MachOBinary> {
+    pub fn iter_macho(&self) -> impl Iterator<Item = &MachOBinary<'_>> {
         self.machos.iter()
     }
 

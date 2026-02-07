@@ -6,6 +6,22 @@
 
 Released on ReleaseDate.
 
+* The `FileType` enum has been removed and `File`'s `file_type`
+  field is now a `String`. This change was made due to the `xml-rs`
+  upgrade and our inability to figure out how to get XML element values
+  to deserialize as enums.
+* MSRV 1.81 -> 1.88.
+* `bzip2` 0.4 -> 0.6.
+* `cryptographic-message-syntax` 0.27 -> 0.28.
+* `scroll` 0.12 -> 0.13.
+* `serde-xml-rs` 0.6. -> 0.8.
+* `x509-certificate` 0.24 -> 0.25.
+* `xml-rs` 0.8 -> 1.0.
+
+## 0.20.0
+
+Released on 2024-11-29.
+
 ## 0.19.0
 
 Released on 2024-11-03.

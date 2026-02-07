@@ -29,10 +29,10 @@ jobs:
     runs-on: 'ubuntu-22.04'
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - name: Download rcodesign Linux executable
-        uses: dawidd6/action-download-artifact@9662f5cf4983f094c5b142e8fec9ddea560ca302
+        uses: dawidd6/action-download-artifact@9e12ab9856b6504e4969c60998d8fc619347a175
         with:
           repo: ${{github.repository}}
           workflow: '.github/workflows/rcodesign.yml'
@@ -43,7 +43,7 @@ jobs:
           path: bins/
 
       - name: Download artifact to sign
-        uses: dawidd6/action-download-artifact@9662f5cf4983f094c5b142e8fec9ddea560ca302
+        uses: dawidd6/action-download-artifact@9e12ab9856b6504e4969c60998d8fc619347a175
         with:
           repo: ${{ github.repository }}
           workflow: ${{ github.event.inputs.workflow }}
@@ -65,7 +65,7 @@ jobs:
               dist/output/${{ github.event.inputs.exe_name }}
 
       - name: Upload
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: exe-${{ github.event.inputs.exe_name }}
           path: dist/output/${{ github.event.inputs.exe_name }}

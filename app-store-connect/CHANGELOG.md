@@ -6,9 +6,18 @@
 
 Released on ReleaseDate.
 
+* MSRV 1.81 -> 1.88.
+* `dirs` 5 -> 6.
+* `x509-certificate` 0.24 -> 0.25.
+
+## 0.7.0
+
+Released on 2024-11-29.
+
 * MSRV 1.78 -> 1.81.
 * `clap` 4.4 -> 4.5.
-* `jsonwebtoken` 9.2 -> 9.3.
+* `jsonwebtoken` 9.2 -> 10.2.
+* `thiserror` 1.0 -> 2.0.
 
 ## 0.6.0
 

@@ -2,6 +2,7 @@
 name = "cpio-archive"
 version = "0.10.0"
 authors = ["Gregory Szorc <gregory.szorc@gmail.com>"]
+rust-version = "1.88"
 edition = "2021"
 license = "MPL-2.0"
 description = "cpio archive reading and writing"
@@ -11,7 +12,7 @@ repository = "https://github.com/indygreg/apple-platform-rs.git"
 readme = "README.md"
 
 [dependencies]
-chrono = "0.4.38"
-is_executable = "1.0.4"
+chrono = "0.4.43"
+is_executable = "1.0.5"
 simple-file-manifest = "0.11.0"
-thiserror = "1.0.68"
+thiserror = "2.0.18"

@@ -76,7 +76,7 @@ impl TableOfContents {
         emitter
             .into_inner()
             .into_inner()
-            .map_err(|e| Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))
+            .map_err(|e| Error::Io(std::io::Error::other(e)))
     }
 
     pub fn write_xml<W: Write>(&self, writer: &mut EventWriter<W>) -> XarResult<()> {
@@ -156,6 +156,7 @@ impl XarToC {
 #[serde(deny_unknown_fields)]
 pub struct Checksum {
     /// The digest format used.
+    #[serde(rename = "@style")]
     pub style: ChecksumType,
 
     /// Offset within heap of the checksum data.
@@ -254,6 +255,7 @@ impl ChecksumType {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct File {
+    #[serde(rename = "@id")]
     pub id: u64,
     pub ctime: Option<String>,
     pub mtime: Option<String>,
@@ -265,7 +267,7 @@ pub struct File {
     #[serde(rename = "name")]
     pub names: Vec<String>,
     #[serde(rename = "type")]
-    pub file_type: FileType,
+    pub file_type: String,
     pub mode: Option<String>,
     pub deviceno: Option<u32>,
     pub inode: Option<u64>,
@@ -398,7 +400,7 @@ impl File {
         }
 
         writer.write(XmlEvent::start_element("type"))?;
-        writer.write(XmlEvent::characters(&self.file_type.to_string()))?;
+        writer.write(XmlEvent::characters(&self.file_type))?;
         writer.write(XmlEvent::end_element())?;
 
         for name in &self.names {
@@ -414,26 +416,6 @@ impl File {
         writer.write(XmlEvent::end_element().name("file"))?;
 
         Ok(())
-    }
-}
-
-#[derive(Clone, Copy, Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum FileType {
-    File,
-    Directory,
-    HardLink,
-    Link,
-}
-
-impl Display for FileType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            FileType::File => f.write_str("file"),
-            FileType::Directory => f.write_str("directory"),
-            FileType::HardLink => f.write_str("hardlink"),
-            FileType::Link => f.write_str("symlink"),
-        }
     }
 }
 
@@ -481,8 +463,9 @@ impl FileData {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FileChecksum {
+    #[serde(rename = "@style")]
     pub style: ChecksumType,
-    #[serde(rename = "$value")]
+    #[serde(rename = "#text")]
     pub checksum: String,
 }
 
@@ -499,13 +482,14 @@ impl FileChecksum {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FileEncoding {
+    #[serde(rename = "@style")]
     pub style: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub struct Ea {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "@id", skip_serializing_if = "Option::is_none")]
     pub id: Option<u64>,
     pub name: String,
     pub offset: u64,
@@ -568,6 +552,7 @@ pub struct FinderCreateTime {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Signature {
+    #[serde(rename = "@style")]
     pub style: SignatureStyle,
     pub offset: u64,
     pub size: u64,
@@ -707,6 +692,18 @@ impl X509Data {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn zoom_toc_load() -> XarResult<()> {
+        let zoom_xml = include_bytes!("testdata-zoom-toc.xml");
+
+        let toc = TableOfContents::from_reader(std::io::BufReader::new(zoom_xml.as_slice()))?;
+
+        _ = toc.files()?;
+        assert!(toc.find_signature(SignatureStyle::Cms).is_some());
+
+        Ok(())
+    }
 
     #[test]
     fn file_checksum_serialize() -> XarResult<()> {

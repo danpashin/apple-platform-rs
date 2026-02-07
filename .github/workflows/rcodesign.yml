@@ -10,10 +10,11 @@ on:
   workflow_dispatch:
 jobs:
   exes:
-    uses: indygreg/actions/.github/workflows/rust-exe.yml@214a8641784d19c45f4261ed8e5a57db81ae6b4e
+    uses: indygreg/actions/.github/workflows/rust-exe.yml@1eaaf4707bbebceaecc842cd23245a007c31666a
     with:
-      actions_ref: "214a8641784d19c45f4261ed8e5a57db81ae6b4e"
+      actions_ref: "1eaaf4707bbebceaecc842cd23245a007c31666a"
       bin: rcodesign
+      extra_build_args_linux_gnu: '--all-features'
       extra_build_args_macos: '--all-features'
       extra_build_args_windows: '--all-features'
       just_bootstrap: true
@@ -21,3 +22,8 @@ jobs:
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  test-softhsm-signing:
+    name: PKCS#11 Test
+    uses: ./.github/workflows/sign-apple-exe-pkcs11.yml
+    needs: [ exes ]

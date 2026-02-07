@@ -45,7 +45,7 @@ impl MachOType {
         let mut fh = File::open(path.as_ref())?;
 
         let mut header = vec![0u8; 4];
-        let count = fh.read(&mut header)?;
+        let mut count = fh.read(&mut header)?;
 
         if count < 4 {
             return Ok(None);
@@ -54,7 +54,21 @@ impl MachOType {
         let magic = goblin::mach::peek(&header, 0)?;
 
         if magic == FAT_MAGIC {
-            Ok(Some(Self::Mach))
+            // As java .class files and FAT Mach-O files share the same magic number
+            // we need another heuristic to distinguish them, taken from:
+            // https://stackoverflow.com/questions/73546728/magic-value-collision-between-macho-fat-binaries-and-java-class-files
+            count = fh.read(&mut header)?;
+
+            if count < 4 {
+                return Ok(None);
+            }
+
+            let architectures = goblin::mach::peek(&header, 0)?;
+            if architectures < 0x20 {
+                Ok(Some(Self::Mach))
+            } else{
+                Ok(None)
+            }
         } else if let Ok((_, Some(_))) = parse_magic_and_ctx(&header, 0) {
             Ok(Some(Self::MachO))
         } else {
@@ -150,6 +164,7 @@ fn pretty_print_xml(xml: &[u8]) -> Result<Vec<u8>, AppleCodesignError> {
                 break;
             }
             xml::reader::XmlEvent::Whitespace(_) => {}
+            xml::reader::XmlEvent::Doctype { .. } => {}
             event => {
                 if let Some(event) = event.as_writer_event() {
                     emitter.write(event).map_err(AppleCodesignError::XmlWrite)?;
@@ -313,7 +328,7 @@ impl CmsSigner {
                 attributes.push(format!("{}", attr.typ));
 
                 if attr.typ == CD_DIGESTS_PLIST_OID {
-                    if let Some(data) = attr.values.get(0) {
+                    if let Some(data) = attr.values.first() {
                         let data = data.deref().clone();
 
                         let plist = data

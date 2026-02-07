@@ -6,6 +6,10 @@
 
 Released on ReleaseDate.
 
+* Ignore SDK-like directories having the name `AssetRuntime.*`, which we
+  believe to be invalid.
+* MSRV 1.81 -> 1.88.
+
 ## 0.6.0
 
 Released on 2024-11-03.

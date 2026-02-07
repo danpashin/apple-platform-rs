@@ -26,7 +26,7 @@ use {
     yubikey::{
         certificate::{CertInfo, Certificate as YkCertificate},
         piv::{import_ecc_key, import_rsa_key, AlgorithmId, SlotId},
-        Error as YkError, MgmKey, PinPolicy, TouchPolicy, YubiKey as RawYubiKey,
+        Error as YkError, MgmKey, PinPolicy, Serial, TouchPolicy, YubiKey as RawYubiKey,
     },
     zeroize::Zeroizing,
 };
@@ -159,13 +159,24 @@ fn attempt_authenticated_operation<T>(
 /// Represents a connection to a yubikey device.
 pub struct YubiKey {
     yk: Arc<Mutex<RawYubiKey>>,
+    serial: Serial,
     pin_callback: Option<Arc<dyn PinCallback>>,
+}
+
+impl std::fmt::Debug for YubiKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("YubiKey")
+            .field("serial", &self.serial)
+            .finish_non_exhaustive()
+    }
 }
 
 impl From<RawYubiKey> for YubiKey {
     fn from(yk: RawYubiKey) -> Self {
+        let serial = yk.serial();
         Self {
             yk: Arc::new(Mutex::new(yk)),
+            serial,
             pin_callback: None,
         }
     }
@@ -174,10 +185,13 @@ impl From<RawYubiKey> for YubiKey {
 impl YubiKey {
     /// Construct a new instance.
     pub fn new() -> Result<Self, AppleCodesignError> {
-        let yk = Arc::new(Mutex::new(RawYubiKey::open()?));
+        let yk = RawYubiKey::open()?;
+        let serial = yk.serial();
+        let yk = Arc::new(Mutex::new(yk));
 
         Ok(Self {
             yk,
+            serial,
             pin_callback: None,
         })
     }
@@ -187,13 +201,13 @@ impl YubiKey {
         self.pin_callback = Some(Arc::new(cb));
     }
 
-    pub fn inner(&self) -> Result<MutexGuard<RawYubiKey>, AppleCodesignError> {
+    pub fn inner(&self) -> Result<MutexGuard<'_, RawYubiKey>, AppleCodesignError> {
         self.yk.lock().map_err(|_| AppleCodesignError::PoisonedLock)
     }
 
     /// Find certificates in this device.
     pub fn find_certificates(
-        &mut self,
+        &self,
     ) -> Result<Vec<(SlotId, CapturedX509Certificate)>, AppleCodesignError> {
         let mut guard = self.inner()?;
         let yk = guard.deref_mut();
@@ -219,7 +233,7 @@ impl YubiKey {
 
     /// Obtain an entity for creating signatures using a certificate at a slot.
     pub fn get_certificate_signer(
-        &mut self,
+        &self,
         slot_id: SlotId,
     ) -> Result<Option<CertificateSigner>, AppleCodesignError> {
         Ok(self

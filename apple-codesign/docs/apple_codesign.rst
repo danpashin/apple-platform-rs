@@ -25,6 +25,7 @@ Other features include:
 
 * Built-in support for using :ref:`smart cards <apple_codesign_smartcard>` (e.g.
   YubiKeys) for signing and key/certificate management.
+* PKCS#11 support (sign with HSMs, etc). See :ref:`apple_codesign_pkcs11` for more.
 * A *remote signing* mode that enables you to delegate just the low-level
   cryptographic signature generation to a remote machine. This allows you to
   do things like have a CI job initiate signing but use a YubiKey on a remote
@@ -57,6 +58,7 @@ to be used as a standalone project.
    apple_codesign_getting_started
    apple_codesign_rcodesign
    apple_codesign_certificate_management
+   apple_codesign_pkcs11
    apple_codesign_smartcard
    apple_codesign_github_actions
    apple_codesign_concepts

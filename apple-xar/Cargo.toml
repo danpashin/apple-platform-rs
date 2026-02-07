@@ -1,9 +1,9 @@
 [package]
 name = "apple-xar"
-version = "0.19.0"
+version = "0.20.0"
 authors = ["Gregory Szorc <gregory.szorc@gmail.com>"]
 edition = "2021"
-rust-version = "1.81"
+rust-version = "1.88"
 license = "MPL-2.0"
 description = "XAR archive reading and writing"
 keywords = ["apple", "xar"]
@@ -13,27 +13,26 @@ readme = "README.md"
 
 [dependencies]
 base64 = "0.22.1"
-bcder = { version = "0.7.4", optional = true }
-bzip2 = "0.4.4"
-chrono = { version = "0.4.38", features = ["serde"] }
-cryptographic-message-syntax = { git = "https://github.com/danpashin/cryptography-rs", rev = "fd4f72a3", optional = true }
+bcder = { version = "0.7.6", optional = true }
+bzip2 = "0.6.1"
+cryptographic-message-syntax = { git = "https://github.com/danpashin/cryptography-rs", rev = "2061ff3e", optional = true }
 digest = "0.10.7"
-log = "0.4.22"
+log = "0.4.29"
 md-5 = "0.10.6"
-flate2 = "1.0.34"
+flate2 = "1.1.8"
 rand = { version = "0.8.5", optional = true }
-reqwest = { version = "0.12.9", default-features = false, optional = true }
-scroll = { version = "0.12.0", features = ["derive"] }
-serde-xml-rs = "0.6.0"
-serde = { version = "1.0.214", features = ["derive"] }
+reqwest = { version = "0.13.2", default-features = false, optional = true }
+scroll = { version = "0.13.0", features = ["derive"] }
+serde-xml-rs = "0.8.2"
+serde = { version = "1.0.228", features = ["derive"] }
 sha1 = "0.10.6"
-sha2 = "0.10.8"
+sha2 = "0.10.9"
 signature = { version = "2.2.0", features = ["std"], optional = true }
-thiserror = "1.0.68"
-url = "2.5.3"
-xml-rs = "0.8.23"
-x509-certificate = { git = "https://github.com/danpashin/cryptography-rs", rev = "fd4f72a3" }
-xz2 = { version = "0.1.7", features = ["static"] }
+thiserror = "2.0.18"
+url = "2.5.8"
+xml-rs = "1.0.0"
+x509-certificate = { git = "https://github.com/danpashin/cryptography-rs", rev = "2061ff3e" }
+liblzma = { version = "0.4.5", features = ["static", "parallel"] }
 
 [features]
 default = ["signing"]
